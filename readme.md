@@ -1,6 +1,6 @@
 ## this project is created on 5 nov 2025. 'detoxify + nlp' approach did not work as expected. now i am moving to contextual_bias approach.
 - i will have to deliver this project by tuesday 11-nov.
-- set temp to 0 and seed fix 0. so answer will most likely remain same. 
+- set temp to 0 and random_seed fix 0. so answer will most likely remain same. 
 
 ## **installation guide:**
 - create env: python3.10 -m venv venv
@@ -13,17 +13,22 @@
 
 ## **TO DO LIST**
 
--update nvidia driver
-sudo apt purge nvidia*
-sudo add-apt-repository ppa:graphics-drivers/ppa -y
-sudo apt update
-sudo apt install nvidia-driver-550 -y
-sudo reboot
+- fine tune the llm. select which one i need to do or should i do all 3 llm.
+- chatgpt asnwer: Fine-tune LLaMA (or another open model) using your bias-corrected or bias-balanced dataset.
+  Use the other two (Gemini and GPT) only as comparative benchmarks — not fine-tuning targets.
 
+| Goal                                   | Best Strategy                 |
+| -------------------------------------- | ----------------------------- |
+| Show “before vs after” bias mitigation | ✅ **Use Wrapper Approach**   |
+| Long-term bias correction (own model)  | Optional LoRA fine-tune later |
+| Quick deployment / demo                | Wrapper → CSV → visualization |
 
-- try to make mebedding run on gpu isntead of cpu
-- check if the contextual_bias_results.csv is good or need to be improved
-- keep cuda so in future client might use it to speed up. client most likely is using Apple macbook m3.
+- Your wrapper adds ~1× the LLM’s latency per rewrite.
+  On Groq: LLaMA-4-Maverick (400B): ~10–14 s per full round.
+         Gemma-1B: ~2 s per full round.
+
+- On your hardware, only Gemma (≤ 3 B) can run locally.
+- The wrapper approach remains efficient — cost is purely the double API call, not local compute.
 
 
 - ask tl what spacy library version i should install. spacy earlier gave lots of issue.
@@ -58,6 +63,7 @@ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0
 
 - **milestone1_gen_output.py:** it will generate response from 3 llm and create new file from it in folder dataset_response.
 - **milestone2_*contextual_bias_analysis.py:** it will work on file 'dataset_response.csv' that will be generated from milestone1_gen_output.py to give contextual_bias_results.csv
+
 - **milestone2_alternative.py:** milestone2_contextual_bias_analysis.py is giving same bias scoring for llm even when prompt is slightly changed based on race, gender, and intersectional. trying to fix that issue here.
 - **milestone2_alternative1.py** same as milestone2_alternative.py, just change semantic model, weights, normlaization, scaling. this file is working.
 - **milestone2_alternative2.py** same as milestone2_alternative1.py, just change it for Sentence-level semantic embeddings 
