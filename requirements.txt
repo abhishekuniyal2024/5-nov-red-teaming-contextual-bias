@@ -1,4 +1,4 @@
-# groq==0.11.0
+# groq==0.11.0  # i have not installed it yet, and i am not sure if i even need it
 
 pandas==2.1.3
 openai==0.28.0
@@ -7,7 +7,18 @@ python-dotenv==1.0.0
 requests==2.31.0
 tqdm==4.66.1
 
+# --- For Contextual Bias Analysis ---
+spacy==3.8.2
+textblob==0.17.1
+sentence-transformers==2.2.2
+huggingface_hub==0.14.1
+matplotlib==3.8.0
+torch>=2.0.0
 
+
+# pip install --upgrade pip setuptools wheel
+
+# -------------------------------------------------------------------------------
 
 # ---------------------------------------------------------------------------------
 # THIS LIBRARY I USED EARLIER WHEN I WAS USING diff (detoxify + nlp) APPROACHES FOR THE TASK.

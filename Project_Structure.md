@@ -6,7 +6,30 @@ I will build a complete, clean **Contextual Bias Detection Framework** — from 
 ---
 
 ## **TO DO LIST**
-- new datset 'dataset.json' is created, on that newly created dataset, i will apply contextual bias analysis.
+- first ask tl what spacy library i should install. spacy earlier gave lots of issue.
+- this is tl fix for spacy issue
+
+# Load SpaCy NLP model safely
+try:
+    import spacy
+    nlp = spacy.load("en_core_web_sm")
+except (ImportError, OSError):
+    logging.info("Installing SpaCy model en_core_web_sm ...")
+    subprocess.run([
+        sys.executable, "-m", "pip", "install",
+        "https://github.com/explosion/spacy-models/releases/download/"
+        "en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl"
+    ], check=True)
+    import spacy
+    nlp = spacy.load("en_core_web_sm")
+
+put this in requiremnets.txt:
+spacy==3.8.0
+https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl
+
+
+- install library for milestone2_contextual_bias_analysis.py 
+- run milestone2_contextual_bias_analysis.py on dataset_response.csv
 - keep cuda so in future client might use it to speed up. client most likely is using Apple macbook m3.
 
 ---
