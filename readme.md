@@ -13,6 +13,15 @@
 
 ## **TO DO LIST**
 
+-update nvidia driver
+sudo apt purge nvidia*
+sudo add-apt-repository ppa:graphics-drivers/ppa -y
+sudo apt update
+sudo apt install nvidia-driver-550 -y
+sudo reboot
+
+
+- try to make mebedding run on gpu isntead of cpu
 - check if the contextual_bias_results.csv is good or need to be improved
 - keep cuda so in future client might use it to speed up. client most likely is using Apple macbook m3.
 
@@ -52,6 +61,7 @@ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0
 - **milestone2_alternative.py:** milestone2_contextual_bias_analysis.py is giving same bias scoring for llm even when prompt is slightly changed based on race, gender, and intersectional. trying to fix that issue here.
 - **milestone2_alternative1.py** same as milestone2_alternative.py, just change semantic model, weights, normlaization, scaling. this file is working.
 - **milestone2_alternative2.py** same as milestone2_alternative1.py, just change it for Sentence-level semantic embeddings 
+- **milestone2_alternative3.py** same as milestone2_alternative2.py, Semantic shift is now directional and asymmetric
 
 - **milestone.md**: milestone that i was suppose to follow.
 - **client_msg_5nov.md:** client give this msg on 5 nov with a client_image.jpeg file
