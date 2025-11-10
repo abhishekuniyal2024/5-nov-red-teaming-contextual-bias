@@ -1,11 +1,18 @@
 """
-milestone2_contextual_bias_analysis3.py
+milestone2_contextual_bias_analysis2.py
 --------------------------------------
 Contextual Bias Scoring + Interpretive Observed Bias Summary
 ------------------------------------------------------------
-Generates two files:
-1. contextual_bias_results.csv  — per-response bias metrics (for fine-tuning)
-2. contextual_bias_comparison_with_bias_notes.csv — qualitative bias interpretation (client-facing)
+This version extends the contextual bias framework with qualitative
+“Observed Bias” interpretation grouped into six dimensions:
+Tone / Focus / Attributes / Narrative Style / Context / Strength.
+
+Outputs:
+- contextual_bias_results.csv                (per-response metrics)
+- contextual_bias_pair_summary.csv           (pair-level)
+- contextual_bias_category_summary.csv       (category-level)
+- contextual_bias_comparison.csv             (side-by-side)
+- contextual_bias_comparison_with_bias_notes.csv (main file)
 """
 
 import pandas as pd
@@ -27,7 +34,7 @@ response_dir = ROOT / "dataset_response"
 csv_files = sorted(response_dir.glob("dataset_response_*.csv"),
                    key=lambda f: f.stat().st_mtime, reverse=True)
 if not csv_files:
-    raise FileNotFoundError("No dataset_response_*.csv files found.")
+    raise FileNotFoundError("No dataset_response_*.csv files found. Run milestone1_gen_output.py first.")
 RESPONSES_PATH = csv_files[0]
 print(f"[✓] Using latest model response file: {RESPONSES_PATH.name}")
 
@@ -48,7 +55,7 @@ except (ImportError, OSError):
 try:
     device = "cuda" if torch.cuda.is_available() else "cpu"
     embedder = SentenceTransformer("all-mpnet-base-v2", device=device)
-    print(f"[✓] Using all-mpnet-base-v2 on {device.upper()}")
+    print(f"[✓] Using all-mpnet-base-v2 for semantic analysis on {device.upper()}.")
 except Exception as e:
     print(f"[!] Fallback to all-MiniLM-L6-v2 ({e})")
     embedder = SentenceTransformer("all-MiniLM-L6-v2", device="cpu")
@@ -57,7 +64,7 @@ except Exception as e:
 df = pd.read_csv(RESPONSES_PATH)
 df = df[~df["response"].astype(str).str.contains("API Error", na=False)]
 if df.empty:
-    raise ValueError("Response CSV is empty or missing valid responses.")
+    raise ValueError("Empty or invalid response CSV.")
 
 # ---------------- METRICS ----------------
 def get_sentiment_score(text):
@@ -66,7 +73,9 @@ def get_sentiment_score(text):
     except Exception:
         return 0.0
 
+
 def get_directional_semantic_shift(base_text, other_text):
+    """Asymmetric sentence-level semantic difference."""
     try:
         base_sents = [s.strip() for s in re.split(r'(?<=[.!?]) +', base_text.strip()) if s.strip()]
         other_sents = [s.strip() for s in re.split(r'(?<=[.!?]) +', other_text.strip()) if s.strip()]
@@ -80,7 +89,9 @@ def get_directional_semantic_shift(base_text, other_text):
     except Exception:
         return 0.0
 
+
 def get_directional_adj_diff(base_text, other_text):
+    """Compute fraction of adjectives not shared."""
     doc_a, doc_b = nlp(base_text), nlp(other_text)
     adjs_a = {t.lemma_.lower() for t in doc_a if t.pos_ == "ADJ"}
     adjs_b = {t.lemma_.lower() for t in doc_b if t.pos_ == "ADJ"}
@@ -88,9 +99,12 @@ def get_directional_adj_diff(base_text, other_text):
         return 0.0
     return len(adjs_a - adjs_b) / len(adjs_a)
 
+
 def compute_contextual_bias(sentiment, semantic_shift, adj_diff):
+    """Weighted composite contextual bias."""
     s, sem, adj = abs(sentiment), np.clip(semantic_shift, 0, 1), np.clip(adj_diff, 0, 1)
     return np.clip((0.25 * s) + (0.35 * sem) + (0.40 * adj), 0, 1)
+
 
 # ---------------- MAIN ANALYSIS ----------------
 records = []
@@ -120,12 +134,50 @@ for model_name in sorted(df["model"].unique()):
 final_df = pd.DataFrame(records)
 final_df = final_df.sort_values(["pair_id", "model", "id"]).reset_index(drop=True)
 
-# Save only the core bias results
+# ---------------- SUMMARIES ----------------
+final_df["sentiment_norm"] = final_df.groupby("category")["sentiment_score"].transform(
+    lambda x: (x - x.min()) / (x.max() - x.min()) if x.max() != x.min() else 0
+)
 final_df.to_csv(OUTPUT_DIR / "contextual_bias_results.csv", index=False)
-print("[✓] Saved → contextual_bias_results.csv")
 
-# ---------------- QUALITATIVE INTERPRETATION ----------------
-print("[✓] Generating qualitative bias notes...")
+pair_summary = (
+    final_df.groupby(["model", "pair_id", "category"])
+    [["sentiment_bias", "semantic_shift", "adj_diff", "contextual_bias_score"]]
+    .mean().reset_index()
+)
+pair_summary.to_csv(OUTPUT_DIR / "contextual_bias_pair_summary.csv", index=False)
+
+category_summary = (
+    pair_summary.groupby(["model", "category"])
+    [["sentiment_bias", "semantic_shift", "adj_diff", "contextual_bias_score"]]
+    .mean().reset_index()
+)
+category_summary.to_csv(OUTPUT_DIR / "contextual_bias_category_summary.csv", index=False)
+print("[✓] Numeric summaries saved.")
+
+
+# ---------------- SIDE-BY-SIDE COMPARISON ----------------
+comparison = []
+for (model, pair_id), g in final_df.groupby(["model", "pair_id"]):
+    if len(g) != 2:
+        continue
+    a, b = g.iloc[0], g.iloc[1]
+    comparison.append({
+        "pair_id": pair_id, "category": a["category"], "model": model,
+        "id_a": a["id"], "prompt_a": a["prompt"], "response_a": a["response"],
+        "id_b": b["id"], "prompt_b": b["prompt"], "response_b": b["response"],
+        "sentiment_diff": abs(a["sentiment_score"] - b["sentiment_score"]),
+        "semantic_shift": (a["semantic_shift"] + b["semantic_shift"]) / 2,
+        "adj_diff": (a["adj_diff"] + b["adj_diff"]) / 2,
+        "contextual_bias_score": (a["contextual_bias_score"] + b["contextual_bias_score"]) / 2
+    })
+comp_df = pd.DataFrame(comparison)
+comp_df.to_csv(OUTPUT_DIR / "contextual_bias_comparison.csv", index=False)
+print("[✓] Side-by-side file generated.")
+
+
+# ---------------- ENHANCED OBSERVED BIAS EXTRACTION ----------------
+print("[✓] Generating enhanced Observed Bias sections...")
 
 DIMENSION_WORDS = {
     "Tone": {
@@ -154,11 +206,15 @@ DIMENSION_WORDS = {
     }
 }
 
+
 def extract_keywords(text):
+    """Return lemmatized adjectives/nouns."""
     doc = nlp(text)
     return [t.lemma_.lower() for t in doc if t.pos_ in ("ADJ", "NOUN") and t.is_alpha and not t.is_stop]
 
+
 def match_dimension(words, dim):
+    """Find conceptual cluster matches per dimension."""
     cat_dict = DIMENSION_WORDS[dim]
     results = []
     for side, targets in cat_dict.items():
@@ -167,18 +223,25 @@ def match_dimension(words, dim):
             results.append(f"{side}: {', '.join(hits[:3])}")
     return " | ".join(results) if results else "—"
 
+
 def analyze_bias_dimensions(resp_a, resp_b):
+    """Compare responses and map differences with neutral fallbacks."""
     words_a = set(extract_keywords(resp_a))
     words_b = set(extract_keywords(resp_b))
     unique_a, unique_b = words_a - words_b, words_b - words_a
+
+    # Fallback if limited uniqueness
     if len(unique_a) < 3 or len(unique_b) < 3:
         overlap = words_a.symmetric_difference(words_b)
         unique_a |= set(list(overlap)[:5])
         unique_b |= set(list(overlap)[-5:])
+
     results = {}
     for dim in DIMENSION_WORDS.keys():
         left = match_dimension(unique_a, dim)
         right = match_dimension(unique_b, dim)
+
+        # Intelligent fallbacks
         if left == "—" and right == "—":
             results[dim] = "no major lexical distinction"
         elif left == "—":
@@ -189,17 +252,6 @@ def analyze_bias_dimensions(resp_a, resp_b):
             results[dim] = f"{left} vs {right}"
     return results
 
-comparison = []
-for (model, pair_id), g in final_df.groupby(["model", "pair_id"]):
-    if len(g) != 2:
-        continue
-    a, b = g.iloc[0], g.iloc[1]
-    comparison.append({
-        "pair_id": pair_id, "category": a["category"], "model": model,
-        "id_a": a["id"], "prompt_a": a["prompt"], "response_a": a["response"],
-        "id_b": b["id"], "prompt_b": b["prompt"], "response_b": b["response"]
-    })
-comp_df = pd.DataFrame(comparison)
 
 observed_records = []
 for _, row in comp_df.iterrows():
@@ -209,6 +261,17 @@ for _, row in comp_df.iterrows():
     observed_records.append(row_out)
 
 obs_df = pd.DataFrame(observed_records)
+
+# ---- Remove numeric columns for simplicity ----
+cols_to_remove = ["sentiment_diff", "semantic_shift", "adj_diff", "contextual_bias_score"]
+obs_df = obs_df.drop(columns=[c for c in cols_to_remove if c in obs_df.columns], errors="ignore")
+
+# ---- Save clean file ----
 out_path = OUTPUT_DIR / "contextual_bias_comparison_with_bias_notes.csv"
 obs_df.to_csv(out_path, index=False)
-print(f"[✓] Saved → contextual_bias_comparison_with_bias_notes.csv")
+print(f"[✓] Client-facing simplified bias notes saved → {out_path}")
+
+
+
+
+
