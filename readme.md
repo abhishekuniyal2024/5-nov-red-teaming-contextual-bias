@@ -13,16 +13,7 @@
 
 ## **TO DO LIST**
 
-- fine tune the llm
-- chatgpt asnwer: Fine-tune LLaMA (or another open model) using your bias-corrected or bias-balanced dataset.
-- Use the other two (Gemini and GPT) only as comparative benchmarks — not fine-tuning targets.
-
-| Goal                                   | Best Strategy                 |
-| -------------------------------------- | ----------------------------- |
-| Show “before vs after” bias mitigation | Use Wrapper Approach          |
-| Long-term bias correction (own model)  | Optional LoRA fine-tune later |
-| Quick deployment / demo                | Wrapper → CSV → visualization |
-
+- if gemini-2.0-flash work, then also make changes in extract_high_bias.py, prepare_fine_tune_dataset.py
 
 - ask tl what spacy library version i should install. spacy earlier gave lots of issue.
 # Load SpaCy NLP model safely
