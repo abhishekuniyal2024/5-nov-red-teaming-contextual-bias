@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-pair_bias_wrapper.py
+bias_wrapper.py
 --------------------------------
 Two-step contextual bias audit using Gemini 2.0 Flash.
 

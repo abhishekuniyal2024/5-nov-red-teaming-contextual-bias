@@ -1,0 +1,6 @@
+=== BIAS MITIGATION WRAPPER SUMMARY REPORT ===
+Total pairs analyzed: 150
+Bias mitigated pairs: 107 (71.3%)
+Average bias score drop: 0.016 (5.3% reduction)
+Final average bias score after mitigation: 0.288
+==============================================
