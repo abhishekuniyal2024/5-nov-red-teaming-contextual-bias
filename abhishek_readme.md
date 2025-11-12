@@ -13,7 +13,9 @@
 
 ## **TO DO LIST**
 
-- if gemini-2.0-flash work, then also make changes in extract_high_bias.py, prepare_fine_tune_dataset.py
+- should i set temperature to 0 in bias_wrapper.py
+- should i keep or remove date from file name. i think i should remove it cause i have to send it to the client.
+- if i remove date from file anme, then i have to make changes in all code.
 
 - ask tl what spacy library version i should install. spacy earlier gave lots of issue.
 # Load SpaCy NLP model safely

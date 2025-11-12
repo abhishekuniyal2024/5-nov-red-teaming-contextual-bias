@@ -65,7 +65,7 @@ def gemini_response(prompt: str, temperature: float = 0.2, max_output_tokens: in
                               json=payload, timeout=120)
             if r.status_code == 429:
                 wait = backoff * (2 ** retries)
-                print(f"[⚠️] Rate limit hit. Waiting {wait}s before retry (attempt {retries+1})...")
+                print(f"Rate limit hit. Waiting {wait}s before retry (attempt {retries+1})...")
                 time.sleep(wait)
                 retries += 1
                 continue
@@ -80,7 +80,7 @@ def gemini_response(prompt: str, temperature: float = 0.2, max_output_tokens: in
             )
         except requests.exceptions.RequestException as e:
             wait = backoff * (retries + 1)
-            print(f"[⚠️] Gemini API error ({e}). Retrying in {wait}s...")
+            print(f"Gemini API error ({e}). Retrying in {wait}s...")
             time.sleep(wait)
             retries += 1
     return f"Error: Exceeded retries for prompt: {prompt[:40]}..."
@@ -236,5 +236,5 @@ if __name__ == "__main__":
     out_file = OUT_DIR / f"pair_wrapper_results_{timestamp}.csv"
     pd.DataFrame(results).to_csv(out_file, index=False)
 
-    print(f"\n[✅] Completed all pair evaluations.")
-    print(f"[📄] Saved before/after bias comparison to: {out_file}")
+    print(f"\nCompleted all pair evaluations.")
+    print(f"Saved before/after bias comparison to: {out_file}")

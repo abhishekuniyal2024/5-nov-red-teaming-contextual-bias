@@ -29,7 +29,7 @@ csv_files = sorted(response_dir.glob("dataset_response_*.csv"),
 if not csv_files:
     raise FileNotFoundError("No dataset_response_*.csv files found.")
 RESPONSES_PATH = csv_files[0]
-print(f"[✓] Using latest model response file: {RESPONSES_PATH.name}")
+print(f"Using latest model response file: {RESPONSES_PATH.name}")
 
 # ======= Load SpaCy safely =======
 try:
@@ -48,9 +48,9 @@ except (ImportError, OSError):
 try:
     device = "cuda" if torch.cuda.is_available() else "cpu"
     embedder = SentenceTransformer("all-mpnet-base-v2", device=device)
-    print(f"[✓] Using all-mpnet-base-v2 on {device.upper()}")
+    print(f"Using all-mpnet-base-v2 on {device.upper()}")
 except Exception as e:
-    print(f"[!] Fallback to all-MiniLM-L6-v2 ({e})")
+    print(f"Fallback to all-MiniLM-L6-v2 ({e})")
     embedder = SentenceTransformer("all-MiniLM-L6-v2", device="cpu")
 
 # ======= Load Data =======
@@ -122,10 +122,10 @@ final_df = final_df.sort_values(["pair_id", "model", "id"]).reset_index(drop=Tru
 
 # Save only the core bias results
 final_df.to_csv(OUTPUT_DIR / "contextual_bias_results.csv", index=False)
-print("[✓] Saved → contextual_bias_results.csv")
+print("Saved → contextual_bias_results.csv")
 
 # ---------------- QUALITATIVE INTERPRETATION ----------------
-print("[✓] Generating qualitative bias notes...")
+print("Generating qualitative bias notes...")
 
 DIMENSION_WORDS = {
     "Tone": {
@@ -211,4 +211,4 @@ for _, row in comp_df.iterrows():
 obs_df = pd.DataFrame(observed_records)
 out_path = OUTPUT_DIR / "contextual_bias_comparison_with_bias_notes.csv"
 obs_df.to_csv(out_path, index=False)
-print(f"[✓] Saved → contextual_bias_comparison_with_bias_notes.csv")
+print(f"Saved → contextual_bias_comparison_with_bias_notes.csv")
